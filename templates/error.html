@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block title %}Ошибка {{ code }}{% endblock %}{% block content %}<div class="error-card"><div class="eyebrow">ОШИБКА {{ code }}</div><h1>{{ message }}</h1><a class="btn primary" href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">Вернуться</a></div>{% endblock %}
