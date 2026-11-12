@@ -450,8 +450,7 @@ def forbidden(e): return render_template('error.html',code=403,message='Недо
 @app.errorhandler(404)
 def not_found(e): return render_template('error.html',code=404,message='Страница или запись не найдена.'),404
 
-@app.cli.command('init-db')
-def init_db():
+def setup_database():
     """Создать таблицы и демонстрационные учётные записи (если БД пустая)."""
     db.create_all()
     for name in ROLES:
@@ -471,9 +470,14 @@ def init_db():
         db.session.commit()
     print('База данных инициализирована. Демо-пароли см. README.md')
 
+@app.cli.command('init-db')
+def init_db():
+    setup_database()
+
 with app.app_context():
-    init_db()
+    setup_database()
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=os.getenv('FLASK_DEBUG', '0') == '1')
+
 
