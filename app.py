@@ -468,6 +468,44 @@ def setup_database():
             u=Employee(fullname=fullname,username=username,role=role_map[role],section=sec,is_active=True); u.set_password({'admin':'Admin123!','director':'Director123!','manager':'Manager123!','farhod':'Farhod123!','madina':'Madina123!','nigora':'Nigora123!'}[username]); db.session.add(u); users[username]=u
         db.session.flush(); users['manager'].manager_id=users['director'].id; users['farhod'].manager_id=users['manager'].id; users['madina'].manager_id=users['manager'].id; users['nigora'].manager_id=users['manager'].id
         db.session.commit()
+        if not WorkTask.query.first():
+            from datetime import date, timedelta
+            st_map = {s.name: s for s in WorkTaskStatus.query.all()}
+            all_st = list(st_map.values())
+            exec_list = [u for u in Employee.query.all() if u.username not in ('admin', 'director')] or Employee.query.all()
+            creator = users.get('manager') or users.get('admin') or Employee.query.first()
+            priorities = ['Низкий', 'Средний', 'Высокий', 'Срочный']
+            topics = [
+                'Разработка REST API модуля отчётов', 'Оптимизация SQL-запросов в базе данных',
+                'Настройка ролевой модели и прав доступа', 'Тестирование формы создания задач',
+                'Интеграция экспорта статистики в Excel', 'Верстка адаптивного интерфейса календаря',
+                'Рефакторинг модуля аутентификации', 'Подготовка документации по API',
+                'Проверка безопасности CSRF-токенов', 'Настройка резервного копирования БД'
+            ]
+            today = date.today()
+            for i in range(1, 41):
+                st = all_st[i % len(all_st)]
+                offset = -5 + (i % 15)
+                due = today + timedelta(days=offset)
+                t = WorkTask(
+                    task_number=f'TSK-2026-{100 + i}',
+                    title=f'{topics[i % len(topics)]} #{i}',
+                    description=f'Выполнить полный цикл работ по задаче #{i} согласно внутреннему регламенту отдела.',
+                    expected_result='Рабочий функционал протестирован и готов к приёмке менеджером.',
+                    result_description='Выполнено в полном объёме, передано на проверку.' if st.is_final or st.name == 'На проверке' else None,
+                    start_date=due - timedelta(days=7),
+                    due_date=due,
+                    original_due_date=due,
+                    priority=priorities[i % len(priorities)],
+                    status_id=st.id,
+                    section_id=sec.id,
+                    created_by_id=creator.id
+                )
+                db.session.add(t)
+                db.session.flush()
+                emp = exec_list[i % len(exec_list)]
+                db.session.add(WorkTaskExecutor(task_id=t.id, employee_id=emp.id))
+            db.session.commit()
     print('База данных инициализирована. Демо-пароли см. README.md')
 
 @app.cli.command('init-db')
